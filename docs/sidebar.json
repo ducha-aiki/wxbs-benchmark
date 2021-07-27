@@ -1,0 +1,8 @@
+{
+  "wxbs_benchmark": {
+    "Overview": "/",
+    "dataset": "dataset.html",
+    "evaluation": "evaluation.html",
+    "metrics": "metrics.html"
+  }
+}
