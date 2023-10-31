@@ -1,0 +1,117 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "wxbs_benchmark",
+    "section": "",
+    "text": "pip install wxbs_benchmark",
+    "crumbs": [
+      "wxbs_benchmark"
+    ]
+  },
+  {
+    "objectID": "index.html#install",
+    "href": "index.html#install",
+    "title": "wxbs_benchmark",
+    "section": "",
+    "text": "pip install wxbs_benchmark",
+    "crumbs": [
+      "wxbs_benchmark"
+    ]
+  },
+  {
+    "objectID": "index.html#how-to-use",
+    "href": "index.html#how-to-use",
+    "title": "wxbs_benchmark",
+    "section": "How to use",
+    "text": "How to use",
+    "crumbs": [
+      "wxbs_benchmark"
+    ]
+  },
+  {
+    "objectID": "index.html#task-1-fundamental-matrix-estimation",
+    "href": "index.html#task-1-fundamental-matrix-estimation",
+    "title": "wxbs_benchmark",
+    "section": "Task 1: fundamental matrix estimation",
+    "text": "Task 1: fundamental matrix estimation\nI will show you how to benchmark a simple baseline of OpenCV SIFT + MAGSAC++ below.\n\nimport numpy as np\nimport cv2\nimport kornia.feature as KF\nimport torch\nfrom kornia_moons.feature import *\nfrom tqdm import tqdm\nfrom wxbs_benchmark.dataset import *\nfrom wxbs_benchmark.evaluation import *\nimport matplotlib.pyplot as plt\n\n\ndef estimate_F_SIFT(img1, img2):\n    det = cv2.SIFT_create(8000, contrastThreshold=-10000, edgeThreshold=10000)\n    kps1, descs1 = det.detectAndCompute(img1, None)\n    kps2, descs2 = det.detectAndCompute(img2, None)\n    snn_ratio, idxs = KF.match_snn(torch.from_numpy(descs1),\n                           torch.from_numpy(descs2), 0.9)\n    tentatives = cv2_matches_from_kornia(snn_ratio, idxs)\n    src_pts = np.float32([ kps1[m.queryIdx].pt for m in tentatives ]).reshape(-1,2)\n    dst_pts = np.float32([ kps2[m.trainIdx].pt for m in tentatives ]).reshape(-1,2)\n    F, _ = cv2.findFundamentalMat(src_pts, dst_pts, cv2.USAC_MAGSAC, 0.25, 0.999, 100000)\n    return F\n\n\nFs = []\nsubset = 'test'\ndset = WxBSDataset('.WxBS', subset=subset, download=True)\nfor pair_dict in tqdm(dset):\n    Fs.append(estimate_F_SIFT(pair_dict['img1'],\n                         pair_dict['img2']))\nresult_dict, thresholds = evaluate_Fs(Fs, subset)\n\n100%|███████████████████████████████████████████| 32/32 [00:11&lt;00:00,  2.67it/s]\n\n\n\nplt.figure()\nplt.plot(thresholds, result_dict['average'], '-x')\nplt.ylim([0,1.05])\nplt.xlabel('Thresholds')\nplt.ylabel('Recall on GT corrs')\nplt.grid(True)\nplt.legend(['SIFT + MAGSAC++'])\n\n\n\n\nWe can also check per-image-pair results\n\nplt.figure(figsize=(10,10))\nplt.ylim([0,1.05])\nplt.xlabel('Thresholds')\nplt.ylabel('Recall on GT corrs')\nplt.grid(True)\n\n\nfor img_pair, recall in result_dict.items():\n    plt.plot(thresholds, recall, '-x', label=img_pair)\n\nplt.legend()\n\n/opt/homebrew/Caskroom/miniforge/base/envs/python39/lib/python3.9/site-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n  and should_run_async(code)\n\n\n\n\n\n\nF-estimation benchmark results\nI have evaluated several popular methods in this Colab\nHere is the resulting graphs. \nIf you are interested in adding your methods - open an issue.",
+    "crumbs": [
+      "wxbs_benchmark"
+    ]
+  },
+  {
+    "objectID": "index.html#task-2-finding-the-correspondence-in-image-2-given-query-point-in-image-1",
+    "href": "index.html#task-2-finding-the-correspondence-in-image-2-given-query-point-in-image-1",
+    "title": "wxbs_benchmark",
+    "section": "Task 2: finding the correspondence in image 2, given query point in image 1",
+    "text": "Task 2: finding the correspondence in image 2, given query point in image 1\nCheck this Colab for an example of running COTR on for the correspondence estimation given the query points.",
+    "crumbs": [
+      "wxbs_benchmark"
+    ]
+  },
+  {
+    "objectID": "evaluation.html",
+    "href": "evaluation.html",
+    "title": "evaluation",
+    "section": "",
+    "text": "evaluate_Fs\n\n evaluate_Fs (Fs=[], subset='test')\n\nEvaluates fundamental matrices returned by algorithm\n\nshift_f = np.array([[0.0, 0.0, 0.0],\n              [0.0, 0.0, -1.0],\n              [0.0, 1.0, 0.0]])\nFs = [shift_f, shift_f]\n\nres_dict, th = evaluate_Fs(Fs, 'val')\nprint (res_dict)\n\n{'WGABS/petrzin': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.02631579, 0.02631579, 0.02631579, 0.02631579, 0.02631579, 0.05263158, 0.05263158], 'WGALBS/kyiv_dolltheater2': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 'average': array([0.        , 0.        , 0.        , 0.        , 0.        ,\n       0.        , 0.        , 0.        , 0.        , 0.        ,\n       0.        , 0.        , 0.        , 0.01315789, 0.01315789,\n       0.01315789, 0.01315789, 0.01315789, 0.02631579, 0.02631579],\n      dtype=float32)}\n\n\n\n\n\nevaluate_corrs\n\n evaluate_corrs (estimated_right=[], estimated_left=[], subset='test')\n\nWe will check the naive baseline – no camera motion, return the input baseline.\n\ndset = WxBSDataset('.WxBS', subset='val', download=True)\npredicted_left = []\npredicted_right = []\nfor res_dict in dset:\n    gt_corrs = res_dict['pts']\n    query_left = gt_corrs[:, :2]\n    query_right = gt_corrs[:, 2:]\n    predicted_right.append(query_left)\n    predicted_left.append(query_right)\neval_results = evaluate_corrs (predicted_right, predicted_left, subset='val')\nprint (eval_results)\n\n({'WGABS/petrzin': array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n       0., 0., 0.], dtype=float32), 'WGALBS/kyiv_dolltheater2': array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n       0., 0., 0.], dtype=float32), 'average': array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n       0., 0., 0.], dtype=float32)}, array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,\n       17, 18, 19]))\n\n\n\n\n\nevaluate_Hs\n\n evaluate_Hs (Hs=[])\n\n\ndset = EVDDataset('.EVD', download=True)\npredicted_Hs = []\nfor res_dict in dset:\n    gt_H = res_dict['H']\n    predicted_Hs.append(gt_H)\neval_results = evaluate_Hs (predicted_Hs)\nprint (eval_results)\n\n({'adam': 0.0, 'cafe': 0.0, 'cat': 0.0, 'dum': 0.0, 'face': 0.0, 'fox': 0.0, 'girl': 0.0, 'graf': 0.0, 'grand': 0.0, 'index': 0.0, 'mag': 0.0, 'pkk': 0.0, 'shop': 0.0, 'there': 0.0, 'vin': 0.0, 'average': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}, array([ 1.        ,  1.39495079,  1.94588772,  2.71441762,  3.78647901,\n        5.2819519 ,  7.368063  , 10.27808533, 14.33742329, 20.        ]))",
+    "crumbs": [
+      "evaluation"
+    ]
+  },
+  {
+    "objectID": "metrics.html",
+    "href": "metrics.html",
+    "title": "metrics",
+    "section": "",
+    "text": "PCK\n\n PCK (pts:&lt;built-infunctionarray&gt;, gt_pts:&lt;built-infunctionarray&gt;,\n      ths=array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13,\n      14, 15, 16,        17, 18, 19]))\n\nFunction to calculate Probability of Correct Keypoint (PCK) given the error threshold\n\n\n\nget_mAA\n\n get_mAA (mAE:&lt;built-infunctionarray&gt;, ths=array([ 1.        ,\n          1.39495079,  1.94588772,  2.71441762,  3.78647901,\n          5.2819519 ,  7.368063  , 10.27808533, 14.33742329, 20.\n          ]))\n\n\n\n\nget_visible_part_mean_absolute_reprojection_error\n\n get_visible_part_mean_absolute_reprojection_error (img1_shape,\n                                                    img2_shape, H_gt, H)\n\nWe reproject the image 1 mask to image2 and back to get the visible part mask. Then we average the reprojection absolute error over that area\nCalculates PCK Probability of Correct Keypoint given the error threshold\n\nimport matplotlib.pyplot as plt\ngt = np.stack([np.arange(5), np.arange(5)], axis=-1)\npts = np.array([[0,0],\n               [1,1.1],\n               [2,3],\n               [2.5,2],\n               [4.1,6]])\nplt.plot(gt[:,0], gt[:,1], 'go', label='GT')\nplt.plot(pts[:,0], pts[:,1], 'rx', label='estimate')\nplt.plot(np.stack([pts[:,0], gt[:,0]], axis=0), \n         np.stack([pts[:,1], gt[:,1]], axis=0), 'r-', label='error')\n\n\nplt.legend()\nths =  np.arange(4)\nacc = PCK(pts, gt, np.arange(4))\nplt.figure()\nplt.plot(ths, acc, '-x')\nplt.ylim([0,1.05])\nplt.xlabel('Thresholds')\nplt.ylabel('PCK')\nplt.grid(True)\n\n\n\n\n\n\n\n\n\n\nfraction_of_gt_corrs_consisent_with_F\n\n fraction_of_gt_corrs_consisent_with_F (Fm:&lt;built-infunctionarray&gt;,\n                                        gt_corrs:&lt;built-infunctionarray&gt;,\n                                        ths=array([ 0,  1,  2,  3,  4,  5,\n                                        6,  7,  8,  9, 10, 11, 12, 13, 14,\n                                        15, 16,        17, 18, 19]))\n\nCalculates percentage of the ground truth correspondences, consistent with estimated fundamental matrix in a sense of the symmetrical epipolar distance. This is evaluation from the WxBS paper, see the screenshot below: \n\npts1 = np.stack([np.arange(5),\n               np.arange(5)], axis=-1)\npts2 = np.array([[0,0],\n               [1,1.1],\n               [2,3],\n               [2.5,2],\n               [4.1,6]])\ncorrs = np.concatenate([pts1, pts2], axis=1)\n# Generate F for the purely horizontal shift between the cameras \nF = np.array([[0.0, 0.0, 0.0],\n              [0.0, 0.0, -1.0],\n              [0.0, 1.0, 0.0]])\nths = np.arange(5)\nrecall = fraction_of_gt_corrs_consisent_with_F(F, corrs, ths)\nplt.figure()\nplt.plot(ths, recall, '-x')\nplt.ylim([0,1.05])\nplt.xlabel('Thresholds')\nplt.ylabel('Recall on GT corrs')\nplt.grid(True)\n\n/opt/homebrew/Caskroom/miniforge/base/envs/python39/lib/python3.9/site-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.\n  and should_run_async(code)",
+    "crumbs": [
+      "metrics"
+    ]
+  },
+  {
+    "objectID": "CONTRIBUTING.html",
+    "href": "CONTRIBUTING.html",
+    "title": "How to contribute",
+    "section": "",
+    "text": "Before anything else, please install the git hooks that run automatic scripts during each commit and merge to strip the notebooks of superfluous metadata (and avoid merge conflicts). After cloning the repository, run the following command inside it:\nnbdev_install_git_hooks\n\n\n\n\nEnsure the bug was not already reported by searching on GitHub under Issues.\nIf you’re unable to find an open issue addressing the problem, open a new one. Be sure to include a title and clear description, as much relevant information as possible, and a code sample or an executable test case demonstrating the expected behavior that is not occurring.\nBe sure to add the complete error messages.\n\n\n\n\nOpen a new GitHub pull request with the patch.\nEnsure that your PR includes a test that fails without your patch, and pass with it.\nEnsure the PR description clearly describes the problem and solution. Include the relevant issue number if applicable.\n\n\n\n\n\n\nKeep each PR focused. While it’s more convenient, do not combine several unrelated fixes together. Create as many branches as needing to keep each PR focused.\nDo not mix style changes/fixes with “functional” changes. It’s very difficult to review such PRs and it most likely get rejected.\nDo not add/remove vertical whitespace. Preserve the original style of the file you edit as much as you can.\nDo not turn an already submitted PR into your development playground. If after you submitted PR, you discovered that more work is needed - close the PR, do the required work and then submit a new PR. Otherwise each of your commits requires attention from maintainers of the project.\nIf, however, you submitted a PR and received a request for changes, you should proceed with commits inside that PR, so that the maintainer can see the incremental fixes and won’t need to review the whole PR again. In the exception case where you realize it’ll take many many commits to complete the requests, then it’s probably best to close the PR, do the work and then submit it again. Use common sense where you’d choose one way over another.\n\n\n\n\n\nDocs are automatically created from the notebooks in the nbs folder."
+  },
+  {
+    "objectID": "CONTRIBUTING.html#how-to-get-started",
+    "href": "CONTRIBUTING.html#how-to-get-started",
+    "title": "How to contribute",
+    "section": "",
+    "text": "Before anything else, please install the git hooks that run automatic scripts during each commit and merge to strip the notebooks of superfluous metadata (and avoid merge conflicts). After cloning the repository, run the following command inside it:\nnbdev_install_git_hooks"
+  },
+  {
+    "objectID": "CONTRIBUTING.html#did-you-find-a-bug",
+    "href": "CONTRIBUTING.html#did-you-find-a-bug",
+    "title": "How to contribute",
+    "section": "",
+    "text": "Ensure the bug was not already reported by searching on GitHub under Issues.\nIf you’re unable to find an open issue addressing the problem, open a new one. Be sure to include a title and clear description, as much relevant information as possible, and a code sample or an executable test case demonstrating the expected behavior that is not occurring.\nBe sure to add the complete error messages.\n\n\n\n\nOpen a new GitHub pull request with the patch.\nEnsure that your PR includes a test that fails without your patch, and pass with it.\nEnsure the PR description clearly describes the problem and solution. Include the relevant issue number if applicable."
+  },
+  {
+    "objectID": "CONTRIBUTING.html#pr-submission-guidelines",
+    "href": "CONTRIBUTING.html#pr-submission-guidelines",
+    "title": "How to contribute",
+    "section": "",
+    "text": "Keep each PR focused. While it’s more convenient, do not combine several unrelated fixes together. Create as many branches as needing to keep each PR focused.\nDo not mix style changes/fixes with “functional” changes. It’s very difficult to review such PRs and it most likely get rejected.\nDo not add/remove vertical whitespace. Preserve the original style of the file you edit as much as you can.\nDo not turn an already submitted PR into your development playground. If after you submitted PR, you discovered that more work is needed - close the PR, do the required work and then submit a new PR. Otherwise each of your commits requires attention from maintainers of the project.\nIf, however, you submitted a PR and received a request for changes, you should proceed with commits inside that PR, so that the maintainer can see the incremental fixes and won’t need to review the whole PR again. In the exception case where you realize it’ll take many many commits to complete the requests, then it’s probably best to close the PR, do the work and then submit it again. Use common sense where you’d choose one way over another."
+  },
+  {
+    "objectID": "CONTRIBUTING.html#do-you-want-to-contribute-to-the-documentation",
+    "href": "CONTRIBUTING.html#do-you-want-to-contribute-to-the-documentation",
+    "title": "How to contribute",
+    "section": "",
+    "text": "Docs are automatically created from the notebooks in the nbs folder."
+  },
+  {
+    "objectID": "dataset.html",
+    "href": "dataset.html",
+    "title": "dataset",
+    "section": "",
+    "text": "WxBSDataset\n\n WxBSDataset (root_dir:str, subset:str='test', version='v1.1',\n              download:bool=True)\n\nWide multiple baselines stereo dataset.\n\ndset = WxBSDataset('.WXBS', download=True)\nprint (dset[10].keys())\nprint (dset[10]['name'])\n\ndict_keys(['img1', 'img2', 'pts', 'errors', 'name'])\nWGALBS/submarine2\n\n\n\n\n\nEVDDataset\n\n EVDDataset (root_dir:str, subset:str='test', version='v1.0',\n             download:bool=True)\n\nExtreme View Dataset.\nOur dataset returns tuples of: image1, image2, labelled GT correspondences, cross-validation errors\n\ndset = EVDDataset('.EVD', download=True)\nprint (dset[0].keys())\nprint (dset[0]['name'])\nprint (dset[0]['H'])\n\nDownloading http://cmp.felk.cvut.cz/wbs/datasets/EVD.zip to .EVD2/EVD.zip\n# Extracting data .EVD2\n\ndict_keys(['img1', 'img2', 'img1_shape', 'img2_shape', 'H', 'name'])\nadam\n[[ 1.60197402e-01 -9.50942558e-02  2.72132086e+02]\n [ 1.13716755e-02  8.83741135e-01  4.04505014e+00]\n [-7.88552590e-05 -3.01914075e-05  1.00000000e+00]]\n\n\n100%|█████████████████████████████████████████████████████████████| 28531000/28531000 [00:04&lt;00:00, 6793575.68it/s]",
+    "crumbs": [
+      "dataset"
+    ]
+  }
+]
